@@ -333,11 +333,12 @@ when hasSomeStackTrace:
       add(s, "Traceback (most recent call last, using override)\n")
       auxWriteStackTraceWithOverride(s)
     elif NimStackTrace:
-      if framePtr == nil:
+      let fptr = cast[proc ():PFrame {.noSideEffect, tags: [], nimcall, raises: [].}](getFrame)()
+      if fptr == nil:
         add(s, noStacktraceAvailable)
       else:
         add(s, "Traceback (most recent call last)\n")
-        auxWriteStackTrace(framePtr, s)
+        auxWriteStackTrace(fptr, s)
     elif defined(nativeStackTrace) and nativeStackTraceSupported:
       add(s, "Traceback from system (most recent call last)\n")
       auxWriteStackTraceWithBacktrace(s)
@@ -348,7 +349,8 @@ when hasSomeStackTrace:
     when defined(nimStackTraceOverride):
       auxWriteStackTraceWithOverride(s)
     elif NimStackTrace:
-      auxWriteStackTrace(framePtr, s)
+      let fptr = cast[proc ():PFrame {.noSideEffect, tags: [], nimcall, raises: [].}](getFrame)()
+      auxWriteStackTrace(fptr, s)
     else:
       s = @[]
 
@@ -356,7 +358,8 @@ when hasSomeStackTrace:
     when defined(nimStackTraceOverride):
       result = true
     elif NimStackTrace:
-      if framePtr == nil:
+      let fptr = cast[proc ():PFrame {.noSideEffect, tags: [], nimcall, raises: [].}](getFrame)()
+      if fptr == nil:
         result = false
       else:
         result = true
@@ -600,9 +603,9 @@ when defined(cpp) and appType != "lib" and not gotoBasedExceptions and
       {.emit: "#if !defined(_MSC_VER) || (_MSC_VER >= 1923)".}
       raise
       {.emit: "#endif".}
-    except Exception:
-      msg = currException.getStackTrace() & "Error: unhandled exception: " &
-        currException.msg & " [" & $currException.name & "]"
+    except Exception as e:
+      msg = e.getStackTrace() & "Error: unhandled exception: " &
+        e.msg & " [" & $e.name & "]"
     except StdException as e:
       msg = "Error: unhandled cpp exception: " & $e.what()
     except:
@@ -620,7 +623,7 @@ when defined(cpp) and appType != "lib" and not gotoBasedExceptions and
 
     rawQuit 1
 
-when not defined(noSignalHandler) and not defined(useNimRtl):
+when not defined(noSignalHandler):
   type Sighandler = proc (a: cint) {.noconv, benign.}
     # xxx factor with ansi_c.CSighandlerT, posix.Sighandler
 
