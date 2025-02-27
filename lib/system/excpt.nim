@@ -333,7 +333,10 @@ when hasSomeStackTrace:
       add(s, "Traceback (most recent call last, using override)\n")
       auxWriteStackTraceWithOverride(s)
     elif NimStackTrace:
-      let fptr = cast[proc ():PFrame {.noSideEffect, tags: [], nimcall, raises: [].}](getFrame)()
+      let fptr = if framePtr != nil:
+          framePtr
+        else:
+          cast[proc ():PFrame {.noSideEffect, tags: [], nimcall, raises: [].}](getFrame)()
       if fptr == nil:
         add(s, noStacktraceAvailable)
       else:
