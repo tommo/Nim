@@ -813,7 +813,7 @@ template tryExceptOSErrorMessage(conf: ConfigRef; errorPrefix: string = "", body
 proc getExtraCmds(conf: ConfigRef; output: AbsoluteFile): seq[string] =
   result = @[]
   when defined(macosx):
-    if optCDebug in conf.globalOptions and optGenStaticLib notin conf.globalOptions:
+    if optCDebug in conf.globalOptions and optGenStaticLib notin conf.globalOptions and conf.target.hostOS in osMacos..osIos:
       # if needed, add an option to skip or override location
       result.add "dsymutil " & $(output).quoteShell
 
